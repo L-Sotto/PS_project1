@@ -2,6 +2,7 @@ package pt.unl.fct.di.syspriv.entities;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,14 +33,45 @@ public class Patient {
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Appointment> appointments = new ArrayList<>();
 
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @Column(name = "retention_until")
+    private LocalDateTime retentionUntil;
+
+    @Column(name = "erasure_requested")
+    private Boolean erasureRequested = false;
+
+    @Column(name = "erasure_completed_at")
+    private LocalDateTime erasureCompletedAt;
+
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "patient_subject_id", insertable = false, updatable = false)
+    private List<ConsentRecord> consentRecords = new ArrayList<>();
+
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "patient_subject_id", insertable = false, updatable = false)
+    private List<GdprRequest> gdprRequests = new ArrayList<>();
+    
     public Patient() {}
 
-    public Patient(String name, Date birthdate, String insurance, String address, Employee primaryDoctorId) {
+    public Patient(String name, Date birthdate, String insurance, String address, Employee primaryDoctorId, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime retentionUntil, Boolean erasureRequested, LocalDateTime erasureCompletedAt) {
         this.name = name;
         this.birthdate = birthdate;
         this.insurance = insurance;
         this.address = address;
-        this.primaryDoctor = primaryDoctor;
+        this.primaryDoctor = primaryDoctorId;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.retentionUntil = retentionUntil;
+        this.erasureRequested = erasureRequested;
+        this.erasureCompletedAt = erasureCompletedAt;
+
+
+
     }
 
     // Getters and Setters
@@ -58,6 +90,16 @@ public class Patient {
     public void setPrimaryDoctor(Employee primaryDoctor) { this.primaryDoctor = primaryDoctor; }
     public List<Appointment> getAppointments() { return appointments; }
     public void setAppointments(List<Appointment> appointments) { this.appointments = appointments; }
+    public LocalDateTime getCreatedAt(){return createdAt;}
+    public void setCreatedAt(LocalDateTime createdAt){this.createdAt = createdAt;}
+    public LocalDateTime getUpdateAt(){return updatedAt;}
+    public void setUpdateAt(LocalDateTime updateAt){this.updatedAt = updateAt;}
+    public LocalDateTime getRetentionUntil(){return retentionUntil;}
+    public void setRetentionUntil(LocalDateTime retentionUntil){this.retentionUntil= retentionUntil;}
+    public Boolean getErasureRequested(){return erasureRequested;}
+    public void setErasureRequested(Boolean erasureRequested){this.erasureRequested = erasureRequested;}
+    public LocalDateTime getErasureCompletedAt(){ return erasureCompletedAt;}
+    public void setErasureCompletedAt(LocalDateTime erasureCompletedAt){this.erasureCompletedAt = erasureCompletedAt;}
 
     // For debugging and logging purposes.
     @Override
