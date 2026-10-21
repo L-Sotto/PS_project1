@@ -524,7 +524,6 @@
             </Target>
             <Rule RuleId="MarketingPermit" Effect="Permit">
                 <Condition>
-                    <!-- Consent must be true -->
                     <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:and">
                         <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
                             <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">true</AttributeValue>
@@ -535,7 +534,6 @@
                                                     MustBePresent="false"/>
                             </Apply>
                         </Apply>
-                        <!-- Consent withdrawn must be false -->
                         <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
                             <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">false</AttributeValue>
                             <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-one-and-only">
@@ -552,6 +550,12 @@
             <Rule RuleId="MarketingDeny" Effect="Deny"/>
 
         </Policy>
+        
+
+
+
+
+
 
         <Policy PolicyId="ErasurePolicy" Version="1.0"
         RuleCombiningAlgId="urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:first-applicable">
@@ -583,7 +587,7 @@
 
         <Policy PolicyId="RetentionPolicy" Version="1.0"
                 RuleCombiningAlgId="urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:first-applicable">
-            <Description>If retention has expired, only an Auditor or DPO can access tthe record.</Description>
+            <Description>If retention has expired, only an Auditor or DPO can access the record.</Description>
             <Target>
                 <AnyOf>
                     <AllOf>
@@ -686,7 +690,6 @@
                 </Condition>
             </Rule>
         </Policy>
-
     </PolicySet>
     
 </PolicySet>

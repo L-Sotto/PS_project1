@@ -25,6 +25,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import org.apache.commons.io.IOUtils;
 
+import pt.unl.fct.di.syspriv.storage.Hibernate;
+
 public class XACMLPDP {
 
     // Standard XACML category URNs
@@ -201,17 +203,24 @@ public class XACMLPDP {
     // }
 
 
+    private List<ConsentRecord> loadConsent(String type, Long subjectId) {
+        if (subjectId == null) return List.of();
+        String field = "PATIENT".equals(type) ? "patientSubjectId" : "employeeSubjectId";
+        return Hibernate.getInstance().jpql(
+            "FROM ConsentRecord c WHERE c." + field + " = " + subjectId, ConsentRecord.class);
+    }
+
     private void addConsentAttributes(Map<String, String> resourceAttrs, Object resource) {
         List<ConsentRecord> records = null;
 
         if (resource instanceof Patient p) {
-            records = p.getConsentRecords();
+            records = loadConsent("PATIENT", p.getId());
         } else if (resource instanceof Employee e) {
-            records = e.getConsentRecords();
+            records = loadConsent("EMPLOYEE", e.getId());
         } else if (resource instanceof Appointment a && a.getPatient() != null) {
-            records = a.getPatient().getConsentRecords();
+            records = loadConsent("PATIENT", a.getPatient().getId());
         } else if (resource instanceof Payment p && p.getPatient() != null) {
-            records = p.getPatient().getConsentRecords();
+            records = loadConsent("PATIENT", p.getPatient().getId());
         }
         ConsentRecord latestMarketing = null;
         ConsentRecord latestResearch = null;
