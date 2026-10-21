@@ -1,7 +1,8 @@
 package pt.unl.fct.di.syspriv.entities;
 
 import jakarta.persistence.*;
-import java.time.LocalDate;
+//import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,13 +31,42 @@ public class Employee {
     @OneToMany(mappedBy = "primaryDoctor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Patient> patients;
 
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @Column(name = "retention_until")
+    private LocalDateTime retentionUntil;
+
+    @Column(name = "erasure_requested")
+    private Boolean erasureRequested = false;
+
+    @Column(name = "erasure_completed_at")
+    private LocalDateTime erasureCompletedAt;
+
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_subject_id", insertable = false, updatable = false)
+    private List<ConsentRecord> consentRecords = new ArrayList<>();
+
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_subject_id", insertable = false, updatable = false)
+    private List<GdprRequest> gdprRequests = new ArrayList<>();
+
     public Employee() {}
 
-    public Employee(String name, String role, String department, Boolean isAdmin) {
+    public Employee(String name, String role, String department, Boolean isAdmin, LocalDateTime createdAt, LocalDateTime updateAt, LocalDateTime retentionUntil, Boolean erasureRequested, LocalDateTime erasureCompletedAt) {
         this.name = name;
         this.role = role;
         this.department = department;
         this.isAdmin = isAdmin;
+        this.createdAt = createdAt;
+        this.updatedAt = updateAt;
+        this.retentionUntil = retentionUntil;
+        this.erasureRequested = erasureRequested;
+        this.erasureCompletedAt = erasureCompletedAt;
+    
     }
 
     // Getters and Setters
@@ -55,6 +85,20 @@ public class Employee {
     public void setAppointments(List<Appointment> appointments) { this.appointments = appointments; }
     public List<Patient> getPatients() { return patients; }
     public void setPatients(List<Patient> patients) { this.patients = patients; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public LocalDateTime getRetentionUntil() { return retentionUntil; }
+    public void setRetentionUntil(LocalDateTime retentionUntil) { this.retentionUntil = retentionUntil; }
+    public Boolean getErasureRequested() { return erasureRequested; }
+    public void setErasureRequested(Boolean erasureRequested) { this.erasureRequested = erasureRequested; }
+    public LocalDateTime getErasureCompletedAt() { return erasureCompletedAt; }
+    public void setErasureCompletedAt(LocalDateTime erasureCompletedAt) { this.erasureCompletedAt = erasureCompletedAt; }
+    public List<ConsentRecord> getConsentRecords() { return consentRecords; }
+    public void setConsentRecords(List<ConsentRecord> consentRecords) { this.consentRecords = consentRecords; }
+    public List<GdprRequest> getGdprRequests() { return gdprRequests; }
+    public void setGdprRequests(List<GdprRequest> gdprRequest) { this.gdprRequests = gdprRequest; }
 
     // For debugging and logging purposes.
     @Override

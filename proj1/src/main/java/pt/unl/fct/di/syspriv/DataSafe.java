@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Scanner;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class DataSafe {
 
@@ -59,6 +61,10 @@ public class DataSafe {
                 System.out.println("Exiting...");
                 continue;
             }
+            if (tableChoice == 6) {
+                handleErasure(scanner);
+                continue;
+            }
 
             System.out.print("Filter by person name (leave blank to look up by ID): ");
             String person = scanner.nextLine().trim();
@@ -94,6 +100,8 @@ public class DataSafe {
 
         scanner.close();
     }
+
+    
 
     private boolean login(Scanner scanner) {
         System.out.println("Are you an employee or patient?");
@@ -174,6 +182,7 @@ public class DataSafe {
         System.out.println("3. Appointments");
         System.out.println("4. Payments");
         System.out.println("5. Exit");
+        System.out.println("6. Request right to erasure (DPO only)");
         System.out.print("Select an option: ");
 
         String input = scanner.nextLine();
@@ -290,4 +299,121 @@ public class DataSafe {
         return false;
     }
     
+
+    private void eraseSubject(Object subject) {
+        if (!(subject instanceof Patient) && !(subject instanceof Employee)) {
+            System.out.println("Erasure is supported only for patients and employees.");
+            return;
+        }
+
+        if (!(loggedInPerson instanceof Employee handler)|| !("DPO".equalsIgnoreCase(handler.getRole()))) {
+            System.out.println("Only a DPO can perform erasure.");
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        String token = "ANON " + UUID.randomUUID();
+
+        try {
+            GdprRequest request;
+
+            if (subject instanceof Patient patient) {
+                patient.setErasureRequested(true);
+                patient.setName(token);
+                patient.setAddress(token);
+                patient.setInsurance(token);
+
+                request = new GdprRequest(null,patient.getId(),"PATIENT","ERASURE",now,null,"PENDING",handler.getId());
+
+                List<Payment> payments = hibernate.jpql("FROM Payment p WHERE p.patient.id = " + patient.getId(),Payment.class);
+
+                for (Payment payment : payments) {
+                    payment.setCardNumber(token);
+                    payment.setAnonymized(true);
+                }
+
+                patient.setErasureCompletedAt(now);
+                request.setCompletedAt(now);
+                request.setStatus("COMPLETED");
+
+                hibernate.update(patient);
+                for (Payment payment : payments) {
+                    hibernate.update(payment);
+                }
+
+            } else {
+                Employee employee = (Employee) subject;
+                employee.setErasureRequested(true);
+                employee.setName(token);
+
+                request = new GdprRequest(employee.getId(),null,"EMPLOYEE","ERASURE",now,null,"PENDING",handler.getId());
+
+                employee.setErasureCompletedAt(now);
+                request.setCompletedAt(now);
+                request.setStatus("COMPLETED");
+
+                hibernate.update(employee);
+            }
+
+            hibernate.persist(request);
+            System.out.println("Erasure completed. The record was retained and anonymized.");
+
+        } catch (Exception e) {
+            logger.error("Failed to process erasure request.", e);
+            System.out.println("Erasure failed. Check the application logs.");
+        }
+    }
+
+
+    private void handleErasure(Scanner scanner) {
+        if (!(loggedInPerson instanceof Employee employee)|| !"DPO".equalsIgnoreCase(employee.getRole())) {
+            System.out.println("Access denied. Only a DPO can perform erasure.");
+            return;
+        }
+
+        System.out.println("Select subject type:");
+        System.out.println("1. Patient");
+        System.out.println("2. Employee");
+        System.out.print("Choice: ");
+
+        String type = scanner.nextLine().trim();
+
+        System.out.print("Enter the subject ID to erase: ");
+        Long id;
+
+        try {
+            id = Long.parseLong(scanner.nextLine().trim());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid ID.");
+            return;
+        }
+
+        Object subject;
+
+        switch (type) {
+            case "1" -> subject = hibernate.get(Patient.class, id);
+            case "2" -> subject = hibernate.get(Employee.class, id);
+            default -> {
+                System.out.println("Invalid subject type.");
+                return;
+            }
+        }
+
+        if (subject == null) {
+            System.out.println("Subject not found.");
+            return;
+        }
+
+        System.out.print("Confirm erasure for subject ID " + id + "? (yes/no): ");
+        if (!"yes".equalsIgnoreCase(scanner.nextLine().trim())) {
+            System.out.println("Erasure cancelled.");
+            return;
+        }
+
+        eraseSubject(subject);
+    }
+
+
+
+
 }

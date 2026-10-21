@@ -2,8 +2,8 @@ package pt.unl.fct.di.syspriv.entities;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+// import java.util.ArrayList;
+// import java.util.List;
 
 @Entity
 @Table(name = "payment")
@@ -29,15 +29,18 @@ public class Payment {
     @Column(length = 20)
     private String cardNumber;
 
+    @Column(name = "anonymized")
+private Boolean anonymized = false;
+
     public Payment() {}
 
-    public Payment(LocalDate dateTime, Patient patient, float value, Appointment appointment,
-                    String cardNumber) {
+    public Payment(LocalDate dateTime, Patient patient, float value, Appointment appointment, String cardNumber) {
         this.dateTime = dateTime;
         this.patient = patient;
         this.value = value;
         this.appointment = appointment;
         this.cardNumber = cardNumber;
+        //this.anonymized = false;
     }
 
     // Getters and Setters
@@ -54,6 +57,8 @@ public class Payment {
     public void setAppointment(Appointment appointment) { this.appointment = appointment; }
     public String getCardNumber() { return cardNumber; }
     public void setCardNumber(String cardNumber) { this.cardNumber = cardNumber; }
+    public Boolean getAnonymized() { return anonymized; }
+    public void setAnonymized(Boolean anonymized) { this.anonymized = anonymized; }
 
     // For debugging and logging purposes.
     @Override
@@ -65,6 +70,7 @@ public class Payment {
                 ", value='" + Float.toString(value) + '\'' +
                 ", appointment='" + appointment.toString() + '\'' +
                 ", cardNumber='" + cardNumber + '\'' +
+                ", anonymized= " + anonymized +
                 '}';
     }
 }

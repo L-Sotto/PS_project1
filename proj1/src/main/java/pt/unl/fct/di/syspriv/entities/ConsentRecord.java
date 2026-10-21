@@ -1,8 +1,8 @@
 package pt.unl.fct.di.syspriv.entities;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+// import java.util.ArrayList;
+// import java.util.List;
 
 @Entity 
 @Table(name="consent_records")
@@ -11,7 +11,7 @@ public class ConsentRecord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, name = "employee_subject_id")
+    @Column(name = "employee_subject_id")
     private Long employeeSubjectId;
 
     @Column(name = "patient_subject_id")
@@ -39,11 +39,9 @@ public class ConsentRecord {
     private String source;
 
 
-    public ConsentRecord(){
+    public ConsentRecord(){}
 
-    }
-
-    public ConsentRecord(Long employeeSubjectId, Long patientSubjectId, String subjectType,                       String purpose, boolean granted, LocalDateTime grantedAt, LocalDateTime withdrawnAt, String policyVersion, String source){
+    public ConsentRecord(Long employeeSubjectId, Long patientSubjectId, String subjectType, String purpose, boolean granted, LocalDateTime grantedAt, LocalDateTime withdrawnAt, String policyVersion, String source){
         this.employeeSubjectId = employeeSubjectId;
         this.patientSubjectId = patientSubjectId;
         this.subjectType = subjectType;

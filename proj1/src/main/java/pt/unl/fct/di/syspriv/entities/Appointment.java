@@ -2,12 +2,12 @@ package pt.unl.fct.di.syspriv.entities;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+// import java.util.ArrayList;
+// import java.util.List;
 
 @Entity
 @Table(name = "appointments")
-public class Appointment {
+public class Appointment{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

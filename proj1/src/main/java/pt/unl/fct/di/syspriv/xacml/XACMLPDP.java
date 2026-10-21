@@ -65,13 +65,33 @@ public class XACMLPDP {
         if (value != null) map.put(key, value);
     }
 
+    
+    private void addGdprState(Map<String, String> resourceAttrs, Object resource) {
+        if (resource instanceof Patient p) {
+            resourceAttrs.put("erasure-requested",Boolean.toString(Boolean.TRUE.equals(p.getErasureRequested())));
+            resourceAttrs.put("retention-expired",Boolean.toString(p.getRetentionUntil() != null&& p.getRetentionUntil().isBefore(java.time.LocalDateTime.now())));
+
+        } else if (resource instanceof Employee e) {
+            resourceAttrs.put("erasure-requested",Boolean.toString(Boolean.TRUE.equals(e.getErasureRequested())));
+
+            resourceAttrs.put("retention-expired",Boolean.toString( e.getRetentionUntil() != null&& e.getRetentionUntil().isBefore(java.time.LocalDateTime.now())));
+        }
+        
+    }
+    
+
+
     public boolean checkAccess(Object requester, Object resource, String context) throws Exception {
+        return checkAccess(requester, resource, context, "read");
+    }
+    
+    public boolean checkAccess(Object requester, Object resource, String context, String action) throws Exception {
         Map<String, String> subjectAttrs = new HashMap<>();
         Map<String, String> resourceAttrs = new HashMap<>();
         Map<String, String> actionAttrs = new HashMap<>();
         Map<String, String> envAttrs = new HashMap<>();
 
-        // TODO: Place the attributes from the XML into the appropriate HashMap.
+        
        
         // subjectAttrs.put("id", String.valueOf(requester.getClass()));
         if (requester instanceof Patient p) {
@@ -98,13 +118,16 @@ public class XACMLPDP {
             resourceAttrs.put("id", String.valueOf(p.getId()));
             resourceAttrs.put("resource-type", "PaymentData");
             putIfNotNull(resourceAttrs, "patient-id", idOf(p.getPatient()));
-        }
+        } 
+
+        addGdprState(resourceAttrs, resource);
+        addConsentAttributes(resourceAttrs, resource);
         envAttrs.put("context", context);
 
         //actionAttrs.put("action-id", "read");
 
 
-        actionAttrs.put("action-id", "read");
+        actionAttrs.put("action-id", action);
 
         DecisionRequestBuilder<?> requestBuilder = pdp.newRequestBuilder(-1, -1);
 
@@ -131,4 +154,121 @@ public class XACMLPDP {
             requestBuilder.putNamedAttributeIfAbsent(fqn, bag);
         }
     }
+    
+
+    // private void addConsentAttributes(Map<String, String> resourceAttrs,Object resource) {
+
+    //     List<ConsentRecord> records = null;
+
+    //     if (resource instanceof Patient p) {
+    //         records = p.getConsentRecords();
+    //     } else if (resource instanceof Employee e) {
+    //         records = e.getConsentRecords();
+    //     }
+
+    //     boolean marketingGranted = false;
+    //     boolean marketingWithdrawn = false;
+    //     boolean researchGranted = false;
+
+    //     if (records != null) {
+    //         for (ConsentRecord record : records) {
+    //             if (record.getPurpose() == null) {
+    //                 continue;
+    //             }
+
+    //             String purpose = record.getPurpose().trim().toLowerCase(Locale.ROOT);
+    //             boolean granted = record.isGranted();
+    //             boolean withdrawn = record.getWithdrawnAt() != null;
+
+    //             if ("marketing".equals(purpose)) {
+                    
+    //                 if (granted && !withdrawn) {
+    //                     marketingGranted = true;
+    //                 }
+    //                 if (withdrawn) {
+    //                     marketingWithdrawn = true;
+    //                 }
+    //             } else if ("research".equals(purpose)) {
+    //                 if (granted && !withdrawn) {
+    //                     researchGranted = true;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     resourceAttrs.put( "consent-marketing", Boolean.toString(marketingGranted && !marketingWithdrawn));
+    //     resourceAttrs.put("consent-withdrawn", Boolean.toString(marketingWithdrawn));
+    //     resourceAttrs.put("consent-research", Boolean.toString(researchGranted));
+    // }
+
+
+    private void addConsentAttributes(Map<String, String> resourceAttrs, Object resource) {
+        List<ConsentRecord> records = null;
+
+        if (resource instanceof Patient p) {
+            records = p.getConsentRecords();
+        } else if (resource instanceof Employee e) {
+            records = e.getConsentRecords();
+        } else if (resource instanceof Appointment a && a.getPatient() != null) {
+            records = a.getPatient().getConsentRecords();
+        } else if (resource instanceof Payment p && p.getPatient() != null) {
+            records = p.getPatient().getConsentRecords();
+        }
+        ConsentRecord latestMarketing = null;
+        ConsentRecord latestResearch = null;
+
+        if (records != null) {
+            for (ConsentRecord record : records) {
+                if (record == null || record.getPurpose() == null) {
+                    continue;
+                }
+
+                String purpose = record.getPurpose().trim().toLowerCase(Locale.ROOT);
+                if ("marketing".equals(purpose)) {
+                    if (latestMarketing == null
+                            || isLaterConsent(record, latestMarketing)) {
+                        latestMarketing = record;
+                    }
+                } else if ("research".equals(purpose)) {
+                    if (latestResearch == null
+                            || isLaterConsent(record, latestResearch)) {
+                        latestResearch = record;
+                    }
+                }
+            }
+        }
+
+        boolean marketingGranted = isCurrentlyGranted(latestMarketing);
+        boolean marketingWithdrawn = latestMarketing != null&& latestMarketing.getWithdrawnAt() != null;
+        boolean researchGranted = isCurrentlyGranted(latestResearch);
+
+        resourceAttrs.put("consent-marketing", Boolean.toString(marketingGranted));
+        resourceAttrs.put("consent-withdrawn",Boolean.toString(marketingWithdrawn));
+        resourceAttrs.put( "consent-research",Boolean.toString(researchGranted));
+    }
+
+    private boolean isCurrentlyGranted(ConsentRecord record) {
+        return record != null&& record.isGranted() && record.getWithdrawnAt() == null;
+    }
+
+    private boolean isLaterConsent(ConsentRecord candidate, ConsentRecord current) {
+        java.time.LocalDateTime candidateTime = candidate.getWithdrawnAt() != null
+                        ? candidate.getWithdrawnAt()
+                        : candidate.getGrantedAt();
+
+        java.time.LocalDateTime currentTime =current.getWithdrawnAt() != null
+                        ? current.getWithdrawnAt()
+                        : current.getGrantedAt();
+        if (candidateTime == null) {
+            return false;
+        }
+
+        if (currentTime == null) {
+            return true;
+        }
+
+        return candidateTime.isAfter(currentTime);
+    }
+
+
+
 }

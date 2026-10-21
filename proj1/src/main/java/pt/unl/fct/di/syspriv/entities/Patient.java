@@ -1,7 +1,7 @@
 package pt.unl.fct.di.syspriv.entities;
 
 import jakarta.persistence.*;
-import java.time.LocalDate;
+//import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.ArrayList;
@@ -58,20 +58,13 @@ public class Patient {
     
     public Patient() {}
 
-    public Patient(String name, Date birthdate, String insurance, String address, Employee primaryDoctorId, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime retentionUntil, Boolean erasureRequested, LocalDateTime erasureCompletedAt) {
+    public Patient(String name, Date birthdate, String insurance, String address, Employee primaryDoctorId) {
         this.name = name;
         this.birthdate = birthdate;
         this.insurance = insurance;
         this.address = address;
         this.primaryDoctor = primaryDoctorId;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.retentionUntil = retentionUntil;
-        this.erasureRequested = erasureRequested;
-        this.erasureCompletedAt = erasureCompletedAt;
-
-
-
+    
     }
 
     // Getters and Setters
@@ -92,14 +85,18 @@ public class Patient {
     public void setAppointments(List<Appointment> appointments) { this.appointments = appointments; }
     public LocalDateTime getCreatedAt(){return createdAt;}
     public void setCreatedAt(LocalDateTime createdAt){this.createdAt = createdAt;}
-    public LocalDateTime getUpdateAt(){return updatedAt;}
-    public void setUpdateAt(LocalDateTime updateAt){this.updatedAt = updateAt;}
+    public LocalDateTime getUpdatedAt(){return updatedAt;}
+    public void setUpdatedAt(LocalDateTime updatedAt){this.updatedAt = updatedAt;}
     public LocalDateTime getRetentionUntil(){return retentionUntil;}
     public void setRetentionUntil(LocalDateTime retentionUntil){this.retentionUntil= retentionUntil;}
     public Boolean getErasureRequested(){return erasureRequested;}
     public void setErasureRequested(Boolean erasureRequested){this.erasureRequested = erasureRequested;}
     public LocalDateTime getErasureCompletedAt(){ return erasureCompletedAt;}
     public void setErasureCompletedAt(LocalDateTime erasureCompletedAt){this.erasureCompletedAt = erasureCompletedAt;}
+    public List<ConsentRecord> getConsentRecords() { return consentRecords; }
+    public void setConsentRecords(List<ConsentRecord> consentRecord) { this.consentRecords = consentRecord; }
+    public List<GdprRequest> getGdprRequests() { return gdprRequests; }
+    public void setGdprRequests(List<GdprRequest> gdprRequest) { this.gdprRequests = gdprRequest; }
 
     // For debugging and logging purposes.
     @Override
